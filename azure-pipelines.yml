@@ -10,9 +10,14 @@ pool:
   vmImage: 'Ubuntu-latest'
   demands:
     - npm
-
+    
 steps:
-- script: echo Hello, world!
+- task: DotNetCoreInstaller@0
+  displayName: 'Use .NET Core SDK 2.1.505'
+  inputs:
+    version: 2.1.505
+
+- script: echo What is your name and who is YoDaddy?
   displayName: 'Run a one-line script'
 
 - script: |
