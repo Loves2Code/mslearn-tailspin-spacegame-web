@@ -8,6 +8,8 @@ trigger:
 
 pool:
   vmImage: 'Ubuntu-latest'
+  demands:
+    - npm
 
 steps:
 - script: echo Hello, world!
