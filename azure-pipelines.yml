@@ -27,6 +27,23 @@ steps:
   
 - task: gulp@1
   displayName: 'Run gulp tasks'
+  
+- script: 'echo "DefinitionName: $(Build.DefinitionName), BuildId: $(Build.BuildId), BuildNumber: $(Build.BuildNumber)" > buildinfo.txt'
+  displayName: 'Write build info'
+  workingDirectory: Tailspin.SpaceGame.Web/wwwroot
+  
+- task: DotNetCoreCLI@2
+  displayName: 'Restore project dependencies'
+  inputs:
+    command: 'restore'
+    projects: '**/*.csproj'
+    
+- task: DotNetCoreCLI@2
+  displayName: 'Build the project - Release'
+  inputs:
+    command: 'build'
+    arguments: '--no restore --configuration Release'
+    projects: '**/*.csproj'
 
 - script: echo This is the result from echoing a one-liner...
   displayName: 'Run a one-line script'
