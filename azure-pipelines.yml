@@ -17,10 +17,15 @@ steps:
   inputs:
     version: 2.1.505
 
-- script: echo What is your name and who is YoDaddy?
+- task: Npm@1
+  displayName: 'Run npm install'
+  inputs:
+    verbose: false
+
+- script: echo This is the result from echoing a one-liner...
   displayName: 'Run a one-line script'
 
 - script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
+    echo What is your name, and who is your daddy?
+    echo Is he rich like me?
   displayName: 'Run a multi-line script'
