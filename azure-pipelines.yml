@@ -3,7 +3,9 @@
 # 10/01/2019
 
 trigger:
-- build-pipeline
+  branches:
+    include:
+    - '*'     # build all branches.
 
 pool:
   vmImage: 'Ubuntu-latest'
