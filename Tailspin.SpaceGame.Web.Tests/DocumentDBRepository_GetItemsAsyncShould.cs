@@ -70,6 +70,7 @@ namespace Tests
 
             // Verify that we received the specified number of items.
             return scores.Count();
+            
         }
     }
 }
