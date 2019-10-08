@@ -3,13 +3,14 @@
 # 10/01/2019
 # Updated 10/07/2019 with running unit-tests.
 
-trigger:
-  branches:
-    include:
-    - '*'     # build all branches.
+# Note used in latest iteration:
+#trigger:
+#  branches:
+#    include:
+#    - '*'     # build all branches.
 
 pool:
-  vmImage: 'Ubuntu-latest'
+  vmImage: 'Ubuntu-16.04'
   demands:
     - npm
     
@@ -44,30 +45,69 @@ steps:
   inputs:
     command: 'restore'
     projects: '**/*.csproj'
-    
-# - task: DotNetCoreCLI@2
-#  displayName: 'Build the project - $(buildConfiguration)'
-#  inputs:
-#    command: 'build'
-#    arguments: '--no-restore --configuration $(buildConfiguration)'
-#    projects: '**/*.csproj'
+
+# Add SonarCloud Configuration and run via 
+# Azure DevOps Service Connection:
+- task: SonarCloudPrepare@1
+  displayName: 'Prepare SonarCloud analysis'
+  inputs:
+    SonarCloud: 'SonarCloud connection 1'
+    organization: '$(organizationSSA)'
+    projectKey: '$(projectKey)'
+    projectName: '$(projectName)'
+    projectVersion: '$(Build.BuildNumber)'
+    extraProperties: |
+      sonar.cs.opencover.reportPaths=$(Build.SourcesDirectory)/TestResults/Coverage/coverage.opencover.xml
+      sonar.exclusions=**/wwwroot/lib/**/*
 
 # Call the build from a template in mslearn-tailspin-spacegame-web/templates/build.yml
-- template: templates/build.yml
-  parameters:
-    buildConfiguration: 'Debug'
 
-- template: templates/build.yml
-  parameters:
-    buildConfiguration: 'Release'
-    
+# In latest iteration, these commands are not included:
+#- template: templates/build.yml
+#  parameters:
+#    buildConfiguration: 'Debug'
+
+#- template: templates/build.yml
+#  parameters:
+#    buildConfiguration: 'Release'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build the project - $(buildConfiguration)'
+  inputs:
+    command: 'build'
+    arguments: '--no-restore --configuration $(buildConfiguration)'
+    projects: '**/*.csproj'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Install ReportGenerator'
+  inputs:
+    command: custom
+    custom: tool
+    arguments: 'install --global dotnet-reportgenerator-globaltool'
+
 - task: DotNetCoreCLI@2
   displayName: 'Run unit tests - $(buildConfiguration)'
   inputs:
     command: 'test'
-    arguments: '--no-build --configuration $(buildConfiguration)'
+    arguments: '--no-build --configuration $(buildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat="cobertura%2copencover" /p:CoverletOutput=$(Build.SourcesDirectory)/TestResults/Coverage/'
     publishTestResults: true
     projects: '**/*.Tests.csproj'
+
+- script: |
+    reportgenerator -reports:$(Build.SourcesDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/CodeCoverage -reporttypes:HtmlInline_AzurePipelines
+  displayName: 'Create code coverage report'
+
+- task: SonarCloudAnalyze@1
+  displayName: 'Run SonarCloud code analysis'
+
+- task: SonarCloudPublish@1
+  displayName: 'Publish SonarCloud quality gate results'
+
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish code coverage report'
+  inputs:
+    codeCoverageTool: 'cobertura'
+    summaryFileLocation: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
 
 - task: DotNetCoreCLI@2
   displayName: 'Publish the project - $(buildConfiguration)'
