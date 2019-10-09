@@ -3,6 +3,7 @@
 # 10/01/2019
 # Updated 10/07/2019 with running unit-tests.
 # Updated 10/09/2019:
+# This was performed on new branch: 'scan-conditional'
 # ***** Perform Build only when: *****
 # 1)  Modify tasks related to SonarCloud (a static analysis of source code for multiple vulnerabilities).
 # 2)  Limit scans to only Pull Requests from the 'master' branch.
