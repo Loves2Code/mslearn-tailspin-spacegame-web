@@ -2,12 +2,10 @@
 # Jim's First Yml project
 # 10/01/2019
 # Updated 10/07/2019 with running unit-tests.
-
-# Note used in latest iteration:
-#trigger:
-#  branches:
-#    include:
-#    - '*'     # build all branches.
+# Updated 10/09/2019:
+# ***** Perform Build only when: *****
+# 1)  Modify tasks related to SonarCloud (a static analysis of source code for multiple vulnerabilities).
+# 2)  Limit scans to only Pull Requests from the 'master' branch.
 
 pool:
   vmImage: 'Ubuntu-16.04'
@@ -47,7 +45,9 @@ steps:
     projects: '**/*.csproj'
 
 # Add SonarCloud Configuration and run via 
-# Azure DevOps Service Connection:
+# Azure DevOps Service Connection, which
+# as of 10/09/2019 is not connecting correctly.
+# The variable names are not correct.
 - task: SonarCloudPrepare@1
   displayName: 'Prepare SonarCloud analysis'
   inputs:
@@ -59,17 +59,13 @@ steps:
     extraProperties: |
       sonar.cs.opencover.reportPaths=$(Build.SourcesDirectory)/TestResults/Coverage/coverage.opencover.xml
       sonar.exclusions=**/wwwroot/lib/**/*
-
-# Call the build from a template in mslearn-tailspin-spacegame-web/templates/build.yml
-
-# In latest iteration, these commands are not included:
-#- template: templates/build.yml
-#  parameters:
-#    buildConfiguration: 'Debug'
-
-#- template: templates/build.yml
-#  parameters:
-#    buildConfiguration: 'Release'
+  condition: |
+    and
+    (
+      succeeded(),
+      eq(variables['Build.Reason'], 'PullRequest'),
+      eq(variables['System.PullRequest.TargetBranch'], 'master')
+    )
 
 - task: DotNetCoreCLI@2
   displayName: 'Build the project - $(buildConfiguration)'
@@ -99,9 +95,23 @@ steps:
 
 - task: SonarCloudAnalyze@1
   displayName: 'Run SonarCloud code analysis'
-
+  condition: |
+    and
+    (
+      succeeded(),
+      eq(variables['Build.Reason'], 'PullRequest'),
+      eq(variables['System.PullRequest.TargetBranch'], 'master')
+    )
+  
 - task: SonarCloudPublish@1
   displayName: 'Publish SonarCloud quality gate results'
+  condition: |
+    and
+    (
+      succeeded(),
+      eq(variables['Build.Reason'], 'PullRequest'),
+      eq(variables['System.PullRequest.TargetBranch'], 'master')
+    )
 
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish code coverage report'
